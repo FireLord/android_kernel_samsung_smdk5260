@@ -424,7 +424,10 @@ static void migrate_to_reboot_cpu(void)
 	set_cpus_allowed_ptr(current, cpumask_of(cpu));
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> fc1cbc7... reboot: rigrate shutdown/reboot to boot cpu
 /**
  *	kernel_restart - reboot the system
  *	@cmd: pointer to buffer containing command to execute for restart
@@ -437,7 +440,6 @@ void kernel_restart(char *cmd)
 {
 	kernel_restart_prepare(cmd);
 	migrate_to_reboot_cpu();
-	disable_nonboot_cpus();
 	syscore_shutdown();
 	if (!cmd)
 		printk(KERN_EMERG "Restarting system.\n");
@@ -465,7 +467,6 @@ void kernel_halt(void)
 {
 	kernel_shutdown_prepare(SYSTEM_HALT);
 	migrate_to_reboot_cpu();
-	disable_nonboot_cpus();
 	syscore_shutdown();
 	printk(KERN_EMERG "System halted.\n");
 	kmsg_dump(KMSG_DUMP_HALT);
