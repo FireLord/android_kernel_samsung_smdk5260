@@ -1149,14 +1149,30 @@ static int shmem_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 		if (shmem_falloc) {
 			if ((vmf->flags & FAULT_FLAG_ALLOW_RETRY) &&
 			   !(vmf->flags & FAULT_FLAG_RETRY_NOWAIT)) {
+				/* It's polite to up mmap_sem if we can */
 				up_read(&vma->vm_mm->mmap_sem);
-				mutex_lock(&inode->i_mutex);
-				mutex_unlock(&inode->i_mutex);
-				return VM_FAULT_RETRY;
+				ret = VM_FAULT_RETRY;
 			}
-			/* cond_resched? Leave that to GUP or return to user */
-			return VM_FAULT_NOPAGE;
+
+			shmem_falloc_waitq = shmem_falloc->waitq;
+			prepare_to_wait(shmem_falloc_waitq, &shmem_fault_wait,
+					TASK_UNINTERRUPTIBLE);
+			spin_unlock(&inode->i_lock);
+			schedule();
+
+			/*
+			 * shmem_falloc_waitq points into the vmtruncate_range()
+			 * stack of the hole-punching task: shmem_falloc_waitq
+			 * is usually invalid by the time we reach here, but
+			 * finish_wait() does not dereference it in that case;
+			 * though i_lock needed lest racing with wake_up_all().
+			 */
+			spin_lock(&inode->i_lock);
+			finish_wait(shmem_falloc_waitq, &shmem_fault_wait);
+			spin_unlock(&inode->i_lock);
+			return ret;
 		}
+		spin_unlock(&inode->i_lock);
 	}
 
 	error = shmem_getpage(inode, vmf->pgoff, &vmf->page, SGP_CACHE, &ret);
