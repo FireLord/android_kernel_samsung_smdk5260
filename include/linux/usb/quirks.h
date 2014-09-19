@@ -39,4 +39,7 @@
 /* resume bus driver after dpm resume  */
 #define USB_QUIRK_NO_DPM_RESUME         0x00000400
 
+/* device generates spurious wakeup, ignore remote wakeup capability */
+#define USB_QUIRK_IGNORE_REMOTE_WAKEUP	0x00000200
+
 #endif /* __LINUX_USB_QUIRKS_H */
