@@ -60,6 +60,7 @@ endif
 obj-$(CONFIG_SEC_MODEM_V2)	+= modem_v2/
 obj-$(CONFIG_THIN_MODEM)	+= thin_modem/
 obj-$(CONFIG_QC_MODEM)		+= mdm_if/
+obj-$(CONFIG_UID_CPUTIME) += uid_cputime.o
 
 # Secure OS Mobicore Interface
 obj-$(CONFIG_MOBICORE_DRIVER)  += tzic.o
