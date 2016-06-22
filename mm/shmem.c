@@ -1093,8 +1093,6 @@ static int shmem_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 	 * The implementation below would be much simpler if we just used a
 	 * standard mutex or completion: but we cannot take i_mutex in fault,
 	 * and bloating every shmem inode for this unlikely case would be sad.
-	 * faulting pages into the hole while it's being punched, and
-	 * wait on i_mutex to be released if vmf->flags permits.
 	 */
 	if (unlikely(inode->i_private)) {
 		struct shmem_falloc *shmem_falloc;
@@ -1108,45 +1106,6 @@ static int shmem_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 			DEFINE_WAIT(shmem_fault_wait);
 
 			ret = VM_FAULT_NOPAGE;
-			if ((vmf->flags & FAULT_FLAG_ALLOW_RETRY) &&
-			   !(vmf->flags & FAULT_FLAG_RETRY_NOWAIT)) {
-				/* It's polite to up mmap_sem if we can */
-				up_read(&vma->vm_mm->mmap_sem);
-				ret = VM_FAULT_RETRY;
-			}
-
-			shmem_falloc_waitq = shmem_falloc->waitq;
-			prepare_to_wait(shmem_falloc_waitq, &shmem_fault_wait,
-					TASK_UNINTERRUPTIBLE);
-			spin_unlock(&inode->i_lock);
-			schedule();
-
-			/*
-			 * shmem_falloc_waitq points into the vmtruncate_range()
-			 * stack of the hole-punching task: shmem_falloc_waitq
-			 * is usually invalid by the time we reach here, but
-			 * finish_wait() does not dereference it in that case;
-			 * though i_lock needed lest racing with wake_up_all().
-			 */
-			spin_lock(&inode->i_lock);
-			finish_wait(shmem_falloc_waitq, &shmem_fault_wait);
-			spin_unlock(&inode->i_lock);
-			return ret;
-		}
-		spin_unlock(&inode->i_lock);
-		if (!shmem_falloc ||
-		    vmf->pgoff < shmem_falloc->start ||
-		    vmf->pgoff >= shmem_falloc->next)
-			shmem_falloc = NULL;
-		spin_unlock(&inode->i_lock);
-		/*
-		 * i_lock has protected us from taking shmem_falloc seriously
-		 * once return from vmtruncate_range() went back up that stack.
-		 * i_lock does not serialize with i_mutex at all, but it does
-		 * not matter if sometimes we wait unnecessarily, or sometimes
-		 * miss out on waiting: we just need to make those cases rare.
-		 */
-		if (shmem_falloc) {
 			if ((vmf->flags & FAULT_FLAG_ALLOW_RETRY) &&
 			   !(vmf->flags & FAULT_FLAG_RETRY_NOWAIT)) {
 				/* It's polite to up mmap_sem if we can */
