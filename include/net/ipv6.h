@@ -14,6 +14,7 @@
 #define _NET_IPV6_H
 
 #include <linux/ipv6.h>
+#include <linux/jhash.h>
 #include <linux/hardirq.h>
 #include <net/if_inet6.h>
 #include <net/ndisc.h>
