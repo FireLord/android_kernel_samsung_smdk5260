@@ -173,10 +173,6 @@ CONFIG_MMC=y
 # CONFIG_MMC_BLOCK_BOUNCE is not set
 CONFIG_SDIO_UART=m
 CONFIG_MMC_ATMELMCI=y
-<<<<<<< HEAD
-CONFIG_MMC_ATMELMCI_DMA=y
-=======
->>>>>>> 0ac7a22... mmc: at91/avr32/atmel-mci: fix DMA-channel leak on module unload
 CONFIG_LEDS_ATMEL_PWM=y
 CONFIG_LEDS_GPIO=y
 CONFIG_LEDS_TRIGGER_TIMER=y
